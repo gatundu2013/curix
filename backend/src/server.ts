@@ -1,1 +1,3 @@
-const names = "omondi";
+import { startServer } from "./app";
+
+startServer();
