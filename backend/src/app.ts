@@ -1,14 +1,18 @@
+import { envVars } from "./config"; // load enviroment
 import express from "express";
+import { icons } from "./utils/icons";
 
 const app = express();
 
 async function startServer() {
   try {
-    app.listen(4000, () => {
-      console.log(`The server is listening on port:${4000}`);
+    app.listen(envVars.PORT, () => {
+      console.log(
+        `${icons.success} Server is listening on port: ${envVars.PORT}`
+      );
     });
   } catch (err) {
-    console.log("Failed to start the server:", err);
+    console.error(`${icons.error} Failed to start the server:`, err);
     process.exit(1);
   }
 }

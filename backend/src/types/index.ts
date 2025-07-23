@@ -1,1 +1,1 @@
-console.log("types.ts");
+console.log("types");

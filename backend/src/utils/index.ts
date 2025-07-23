@@ -1,1 +1,1 @@
-console.log("utils.ts");
+export * from "./icons";

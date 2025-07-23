@@ -1,1 +1,1 @@
-console.log("config.ts");
+export * from "./env.config";

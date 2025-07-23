@@ -1,1 +1,1 @@
-console.log("validations.ts");
+export * from "./env.validations";
