@@ -31,6 +31,4 @@ console.log(
   `${icons.success} All required environment variables were successfully loaded.`
 );
 
-export const envVars: EnvVariablesType = {
-  PORT: result.data.PORT,
-};
+export const envVariables = result.data; //
