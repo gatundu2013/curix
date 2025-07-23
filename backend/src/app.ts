@@ -1,11 +1,14 @@
 import { envVariables } from "./config"; // load enviroment
 import express from "express";
 import { icons } from "./utils/icons";
+import { connectDb } from "./db/connection";
 
 const app = express();
 
 async function startServer() {
   try {
+    await connectDb();
+
     app.listen(envVariables.PORT, () => {
       console.log(
         `${icons.success} Server is listening on port: ${envVariables.PORT}`
