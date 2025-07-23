@@ -31,4 +31,4 @@ console.log(
   `${icons.success} All required environment variables were successfully loaded.`
 );
 
-export const envVariables = result.data; //
+export const envVariables = result.data;
