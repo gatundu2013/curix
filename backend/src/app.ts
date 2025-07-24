@@ -2,12 +2,14 @@ import { envVariables } from "./config"; // load enviroment
 import express from "express";
 import { icons } from "./utils/icons";
 import { connectDb } from "./db/connection";
+import { connectRedis } from "./db/connection/redis";
 
 const app = express();
 
 async function startServer() {
   try {
     await connectDb();
+    await connectRedis();
 
     app.listen(envVariables.PORT, () => {
       console.log(
