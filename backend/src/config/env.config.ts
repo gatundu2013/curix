@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 import path from "path";
 import fs from "fs";
-import { envVariablesSchema, EnvVariablesType } from "../validations";
+import { envVariablesSchema } from "../validations";
 import { icons } from "../utils";
 
 // Determine which .env file to use (e.g. .env.development, .env.production)
