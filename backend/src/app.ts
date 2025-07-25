@@ -4,6 +4,7 @@ import { icons } from "./utils/icons.utils";
 import { connectDb, connectRedis } from "./db/connection";
 import { userRouter } from "./routes/v1/user";
 import { adminRouter } from "./routes/v1/admin";
+import { AuthService } from "./services/auth/auth.service";
 
 const app = express();
 const router = Router();

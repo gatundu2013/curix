@@ -1,1 +1,2 @@
-console.log("types");
+export * from "./auth.types";
+export * from "./otp.types";

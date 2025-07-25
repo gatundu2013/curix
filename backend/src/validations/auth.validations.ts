@@ -1,4 +1,5 @@
 import * as z from "zod";
+import { OTP_PURPOSE } from "../types";
 
 // Username: 3–20 chars, a-z, A-Z, 0-9, _ or -, must include at least one letter or digit
 // 😊 "user_123", "__abc__" | 😡 "__", "---", "us", "user@name"
@@ -19,4 +20,13 @@ export const registerSchema = z.object({
   otp: z.string(),
 });
 
+export const requestOtpSchema = z.object({
+  phoneNumber: z
+    .string()
+    .trim()
+    .regex(phoneNumberRegex, "Invalid phone number format"),
+  otpPurpose: z.enum(OTP_PURPOSE),
+});
+
 export type RegisterPayload = z.infer<typeof registerSchema>;
+export type RequestOtpPayload = z.infer<typeof requestOtpSchema>;
