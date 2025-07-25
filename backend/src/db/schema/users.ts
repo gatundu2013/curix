@@ -1,4 +1,11 @@
-import { pgTable, uuid, varchar, boolean, numeric, timestamp } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  uuid,
+  varchar,
+  boolean,
+  numeric,
+  timestamp,
+} from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -6,7 +13,6 @@ export const users = pgTable("users", {
   hashedPassword: varchar("hashed_password", { length: 100 }).notNull(),
   phoneNumber: varchar("phone_number", { length: 15 }).notNull().unique(),
   balance: numeric("balance", { precision: 12, scale: 2 }).default("0"),
-  referralCode: varchar("referral_code", { length: 10 }).notNull().unique(),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
