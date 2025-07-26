@@ -1,16 +1,13 @@
 import { envVariables } from "./config"; // load enviroment
-import express, { Router } from "express";
+import express from "express";
 import { icons } from "./utils/icons.utils";
 import { connectDb, connectRedis } from "./db/connection";
-import { userRouter } from "./routes/v1/user";
-import { adminRouter } from "./routes/v1/admin";
-import { AuthService } from "./services/auth/auth.service";
+import { v1Router } from "./routes/v1";
 
 const app = express();
-const router = Router();
 
-router.use("/user", userRouter);
-router.use("/admin", adminRouter);
+app.use(express.json());
+app.use("/api/v1", v1Router);
 
 async function startServer() {
   try {

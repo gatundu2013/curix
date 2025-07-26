@@ -1,4 +1,11 @@
-import { pgTable, uuid, numeric, varchar, text, timestamp } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  uuid,
+  numeric,
+  varchar,
+  text,
+  timestamp,
+} from "drizzle-orm/pg-core";
 import { withdrawalStatusEnum } from "./enums";
 import { users } from "./users";
 
@@ -10,5 +17,7 @@ export const withdrawals = pgTable("withdrawals", {
   adminNotes: text("admin_notes"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-  userId: uuid("user_id").references(() => users.id).notNull(),
+  userId: uuid("user_id")
+    .references(() => users.id)
+    .notNull(),
 });

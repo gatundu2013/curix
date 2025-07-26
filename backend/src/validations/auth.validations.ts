@@ -20,6 +20,14 @@ export const registerSchema = z.object({
   otp: z.string(),
 });
 
+export const loginSchema = z.object({
+  phoneNumber: z
+    .string()
+    .trim()
+    .regex(phoneNumberRegex, "Invalid phone number format"),
+  password: z.string().min(4, "Password must be atleast 4 char"),
+});
+
 export const requestOtpSchema = z.object({
   phoneNumber: z
     .string()
@@ -28,5 +36,16 @@ export const requestOtpSchema = z.object({
   otpPurpose: z.enum(OTP_PURPOSE),
 });
 
+export const resetPasswordSchema = z.object({
+  phoneNumber: z
+    .string()
+    .trim()
+    .regex(phoneNumberRegex, "Invalid phone number format"),
+  password: z.string().min(4, "Password must be atleast 4 char"),
+  otp: z.coerce.string(),
+});
+
 export type RegisterPayload = z.infer<typeof registerSchema>;
+export type LoginPayload = z.infer<typeof loginSchema>;
 export type RequestOtpPayload = z.infer<typeof requestOtpSchema>;
+export type ResetPasswordPayload = z.infer<typeof resetPasswordSchema>;

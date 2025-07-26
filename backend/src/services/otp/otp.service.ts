@@ -11,7 +11,7 @@ const otpRedisService = new OtpRedisService();
  */
 export class OtpService {
   // Maximum number of OTP requests allowed per phone number within the rate limit window
-  private MAX_OTP_REQUESTS = 5;
+  private MAX_OTP_REQUESTS = 3;
 
   /**
    * Generates and sends a new OTP to the specified phone number
@@ -33,7 +33,7 @@ export class OtpService {
 
     // Enforce rate limiting to prevent spam and abuse
     if (requestCount >= this.MAX_OTP_REQUESTS) {
-      throw new Error("Too many OTP requests. Please try again later.");
+      throw new Error("Too many OTP requests. Try again later.");
     }
 
     // Generate a cryptographically secure 4-digit OTP
@@ -63,12 +63,10 @@ export class OtpService {
     purpose,
     otp,
   }: OtpPayload): Promise<boolean> {
-    // Input validation: Check if OTP is provided and has the expected 4-digit format
     if (!otp || otp.length !== 4) {
       return false;
     }
 
-    // Get the stored OTP from Redis
     const storedOtp = await otpRedisService.getOtp({ phoneNumber, purpose });
 
     // Compare user-provided OTP with stored value

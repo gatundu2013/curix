@@ -3,12 +3,12 @@ import { randomUUID } from "crypto";
 import { OtpPayload } from "../../types";
 
 const redisOtpKeys = {
-  // Generates OTP rate limiting Key
+  // OTP rate limiting Key
   rateLimitKey({ phoneNumber }: Pick<OtpPayload, "phoneNumber">) {
     return `rate-limit:otp:${phoneNumber}`;
   },
 
-  // Generates OTP storage key
+  // OTP storage key
   otpStorageKey({
     phoneNumber,
     purpose,
@@ -21,8 +21,8 @@ const redisOtpKeys = {
  * Handles all Redis operations related to OTPs.
  */
 export class OtpRedisService {
-  private OTP_EXPIRY_SECONDS = 300; // mins
-  private RATE_LIMIT_WINDOW_MS = 300_000; // Rate limiting window - sec
+  private OTP_EXPIRY_SECONDS = 300;
+  private RATE_LIMIT_WINDOW_MS = 300_000;
 
   /**
    * Stores an OTP in Redis with expiration and updates rate limiting data
@@ -37,14 +37,14 @@ export class OtpRedisService {
     // Check if rate limit key exists to avoid overwriting expiration
     const hasRateLimitKey = await redis.exists(rateLimitKey);
 
-    // Set expiration for rate limit key if it doesn't exist
-    // This ensures old rate limit data is eventually cleaned up
-    if (!hasRateLimitKey) {
-      await redis.expire(rateLimitKey, 1800); // Expire set after 30 min
-    }
-
     // Add current timestamp to rate limiting sorted set
     await redis.zadd(rateLimitKey, Date.now(), randomUUID());
+
+    // Set expiration for rate limit key if it did not exist
+    // This ensures old rate limit data is eventually cleaned up
+    if (!hasRateLimitKey) {
+      await redis.expire(rateLimitKey, 60 * 15); // 15 min Expiry
+    }
 
     // Store the OTP with automatic expiration
     await redis.set(otpKey, otp, "EX", this.OTP_EXPIRY_SECONDS);

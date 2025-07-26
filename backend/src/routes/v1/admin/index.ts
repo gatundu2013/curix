@@ -1,3 +1,1 @@
-import { Router } from "express";
-
-export const adminRouter = Router();
+console.log("admin routes");
