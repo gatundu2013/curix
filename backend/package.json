@@ -1,0 +1,18 @@
+{
+  "name": "curix",
+  "version": "1.0.0",
+  "description": "Best Crash App",
+  "main": "server.js",
+  "scripts": {
+    "dev": "tsx --watch src/server.ts",
+    "start": "node dist/server.js",
+    "build": "tsc",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "tsx": "^4.20.3"
+  }
+}
