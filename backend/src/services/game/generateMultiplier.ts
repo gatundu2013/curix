@@ -1,21 +1,34 @@
 import crypto from "crypto";
 
 export class MultiplierGenerator {
-  private static readonly GAME_HASH_SLICE_LEN = 13; // 13 hex chars = 6.5 bytes
-  private static readonly HOUSE_EDGE = 0.02;
-  private static readonly MAX_MULTIPLIER = 4000;
-  private static readonly MIN_MULTIPLIER = 1;
+  private static readonly CONFIG = {
+    GAME_HASH_SLICE_LEN: 13,
+    HOUSE_EDGE: 0.02, // 2%
+    MAX_MULTIPLIER: 4000,
+    MIN_MULTIPLIER: 1,
+  };
 
   private serverSeed: string | null = null;
   private hashedServerSeed: string | null = null;
   private gameHash: string | null = null;
-  private decimal: number | null = null;
-  private normalizedValue: number | null = null;
+  private hashIntValue: number | null = null;
+  private normalizedHashValue: number | null = null;
   private rawMultiplier: number | null = null;
   private finalMultiplier: number | null = null;
   private clientSeed: string | null = null;
 
-  // Generates a random base64 server seed and its for provable fairness
+  constructor(clientSeed: string) {
+    if (!clientSeed) {
+      throw new Error("Client seed is required");
+    }
+
+    this.clientSeed = clientSeed;
+    this.generateResults();
+  }
+
+  /**
+   * Generates a secure random server seed (base64) and its SHA-256 hash.
+   */
   private generateServerSeed(bytesLength = 24) {
     const serverSeed = crypto.randomBytes(bytesLength).toString("base64");
     const hashedServerSeed = crypto
@@ -27,79 +40,80 @@ export class MultiplierGenerator {
     this.hashedServerSeed = hashedServerSeed;
   }
 
-  // Combines server and client seeds to produce a unique, deterministic game hash
-  private generateHash(clientSeed: string) {
-    if (!clientSeed || clientSeed.trim() === "") {
-      throw new Error("Client seed cannot be empty");
-    }
-
+  /**
+   * Combines the server and client seeds and hashes them to get a deterministic game hash.
+   */
+  private generateHash() {
     if (!this.serverSeed) {
-      throw new Error("Server seed was not generated");
+      throw new Error("Server seed has not been generated");
     }
 
-    const seedCombination = `${this.serverSeed}${clientSeed}`;
+    const combinedSeed = `${this.serverSeed}${this.clientSeed}`;
     const gameHash = crypto
       .createHash("sha256")
-      .update(seedCombination)
+      .update(combinedSeed)
       .digest("hex");
 
     this.gameHash = gameHash;
-    this.clientSeed = clientSeed;
   }
 
-  // Converts  game hash  to a multiplier
+  /**
+   * Converts the start of the hash into a decimal, then normalizes it,
+   * and applies an inverse curve to produce a multiplier.
+   */
   private generateMultiplier() {
     if (!this.gameHash) {
       throw new Error("Game hash was not generated");
     }
 
-    const slicedHash = this.gameHash.slice(
-      0,
-      MultiplierGenerator.GAME_HASH_SLICE_LEN
-    );
+    const sliceLen = MultiplierGenerator.CONFIG.GAME_HASH_SLICE_LEN;
+    const slicedHash = this.gameHash.slice(0, sliceLen);
 
-    const numBytes = MultiplierGenerator.GAME_HASH_SLICE_LEN / 2; // 2 hex chars = 1 byte
-    const numBits = numBytes * 8;
-    const maxValue = Math.pow(2, numBits) - 1;
+    const byteLength = sliceLen / 2; // 1 bytes === 2 hex char
+    const bitCount = byteLength * 8;
+    const maxHashValue = Math.pow(2, bitCount) - 1;
 
-    const decimalValue = parseInt(slicedHash, 16);
-    const normalizedValue = decimalValue / maxValue;
+    const hashIntValue = parseInt(slicedHash, 16);
+    const normalizedHashValue = hashIntValue / maxHashValue;
 
-    // Inverse curve where low normalized values generate low multipliers,
-    // and values close to 1 generate very high multipliers
-    const rawMultiplier = 1 / (1 - normalizedValue);
-
-    // Apply house edge
+    const rawMultiplier = 1 / (1 - normalizedHashValue);
     const adjustedMultiplier =
-      rawMultiplier * (1 - MultiplierGenerator.HOUSE_EDGE);
+      rawMultiplier * (1 - MultiplierGenerator.CONFIG.HOUSE_EDGE); // Apply house edge
 
-    // Clamp to min/max range
-    const finalMultiplier = Math.min(
-      MultiplierGenerator.MAX_MULTIPLIER,
-      Math.max(MultiplierGenerator.MIN_MULTIPLIER, adjustedMultiplier)
+    const clampedMultiplier = Math.min(
+      MultiplierGenerator.CONFIG.MAX_MULTIPLIER,
+      Math.max(MultiplierGenerator.CONFIG.MIN_MULTIPLIER, adjustedMultiplier)
     );
 
-    this.decimal = decimalValue;
-    this.normalizedValue = normalizedValue;
+    this.hashIntValue = hashIntValue;
+    this.normalizedHashValue = normalizedHashValue;
     this.rawMultiplier = rawMultiplier;
-    this.finalMultiplier = finalMultiplier;
+    this.finalMultiplier = clampedMultiplier;
   }
 
-  public generateResults(clientSeed: string) {
+  /**
+   * Generate Results.
+   */
+  private generateResults() {
     this.generateServerSeed();
-    this.generateHash(clientSeed);
+    this.generateHash();
     this.generateMultiplier();
   }
 
-  public getGameDetails() {
+  /**
+   * Returns all the key details of the multiplier generation process
+   */
+  public getMultiplierDetails() {
     return {
-      clientSeed: this.clientSeed,
-      serverSeedHash: this.hashedServerSeed,
-      decimal: this.decimal,
-      gameHash: this.gameHash,
-      normalizedValue: this.normalizedValue,
-      rawMultiplier: this.rawMultiplier,
       finalMultiplier: this.finalMultiplier,
+      rawMultiplier: this.rawMultiplier,
+      normalizedHashValue: this.normalizedHashValue,
+      hashIntValue: this.hashIntValue,
+      clientSeed: this.clientSeed,
+      serverSeed: this.serverSeed,
+      serverSeedHash: this.hashedServerSeed,
+      combinedSeed: `${this.serverSeed}${this.clientSeed}`,
+      gameHash: this.gameHash,
     };
   }
 }

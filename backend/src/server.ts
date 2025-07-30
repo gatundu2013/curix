@@ -1,7 +1,8 @@
-import { MultiplierGenerator } from "./services/game/generateMultiplier";
+import {
+  MultiplierGenerator,
+  MultiplierSimulator,
+} from "./services/game/generateMultiplier";
 
-const multiplierGenerator = new MultiplierGenerator();
+const multiplierDetails = new MultiplierGenerator("curix2013");
 
-multiplierGenerator.generateResults("dddd");
-
-console.log(multiplierGenerator);
+console.log(multiplierDetails);
