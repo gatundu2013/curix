@@ -1,8 +1,5 @@
-import {
-  MultiplierGenerator,
-  MultiplierSimulator,
-} from "./services/game/generateMultiplier";
+import { MultiplierSimulator } from "./services/game/multiplier/multiplierSimulator";
 
-const multiplierDetails = new MultiplierGenerator("curix2013");
+const multiplierSimulator = new MultiplierSimulator();
 
-console.log(multiplierDetails);
+console.log(multiplierSimulator.simulateDistribution(1000));

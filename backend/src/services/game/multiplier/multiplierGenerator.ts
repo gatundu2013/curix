@@ -1,9 +1,10 @@
 import crypto from "crypto";
+import { roundToDecimals } from "../../../utils/roundToDecimal";
 
 export class MultiplierGenerator {
   private static readonly CONFIG = {
     GAME_HASH_SLICE_LEN: 13,
-    HOUSE_EDGE: 0.02, // 2%
+    HOUSE_EDGE: 0.03, // 3%
     MAX_MULTIPLIER: 4000,
     MIN_MULTIPLIER: 1,
   };
@@ -17,14 +18,7 @@ export class MultiplierGenerator {
   private finalMultiplier: number | null = null;
   private clientSeed: string | null = null;
 
-  constructor(clientSeed: string) {
-    if (!clientSeed) {
-      throw new Error("Client seed is required");
-    }
-
-    this.clientSeed = clientSeed;
-    this.generateResults();
-  }
+  constructor() {}
 
   /**
    * Generates a secure random server seed (base64) and its SHA-256 hash.
@@ -43,7 +37,11 @@ export class MultiplierGenerator {
   /**
    * Combines the server and client seeds and hashes them to get a deterministic game hash.
    */
-  private generateHash() {
+  private generateHash(clientSeed: string) {
+    if (!clientSeed || clientSeed.trim() === "") {
+      throw new Error("Invalid client seed");
+    }
+
     if (!this.serverSeed) {
       throw new Error("Server seed has not been generated");
     }
@@ -55,13 +53,14 @@ export class MultiplierGenerator {
       .digest("hex");
 
     this.gameHash = gameHash;
+    this.clientSeed = clientSeed;
   }
 
   /**
    * Converts the start of the hash into a decimal, then normalizes it,
    * and applies an inverse curve to produce a multiplier.
    */
-  private generateMultiplier() {
+  private calculateMultiplier() {
     if (!this.gameHash) {
       throw new Error("Game hash was not generated");
     }
@@ -76,9 +75,12 @@ export class MultiplierGenerator {
     const hashIntValue = parseInt(slicedHash, 16);
     const normalizedHashValue = hashIntValue / maxHashValue;
 
-    const rawMultiplier = 1 / (1 - normalizedHashValue);
-    const adjustedMultiplier =
+    let rawMultiplier = 1 / (1 - normalizedHashValue);
+    rawMultiplier = roundToDecimals(rawMultiplier);
+
+    let adjustedMultiplier =
       rawMultiplier * (1 - MultiplierGenerator.CONFIG.HOUSE_EDGE); // Apply house edge
+    adjustedMultiplier = roundToDecimals(adjustedMultiplier);
 
     const clampedMultiplier = Math.min(
       MultiplierGenerator.CONFIG.MAX_MULTIPLIER,
@@ -94,15 +96,24 @@ export class MultiplierGenerator {
   /**
    * Generate Results.
    */
-  private generateResults() {
+  public generateMultiplier(clientSeed: string) {
     this.generateServerSeed();
-    this.generateHash();
-    this.generateMultiplier();
+    this.generateHash(clientSeed);
+    this.calculateMultiplier();
+
+    return {
+      finalMultiplier: this.finalMultiplier,
+      rawMultiplier: this.rawMultiplier,
+      normalizedHashValue: this.normalizedHashValue,
+      hashIntValue: this.hashIntValue,
+      clientSeed: this.clientSeed,
+      serverSeed: this.serverSeed,
+      serverSeedHash: this.hashedServerSeed,
+      combinedSeed: `${this.serverSeed}${this.clientSeed}`,
+      gameHash: this.gameHash,
+    };
   }
 
-  /**
-   * Returns all the key details of the multiplier generation process
-   */
   public getMultiplierDetails() {
     return {
       finalMultiplier: this.finalMultiplier,
