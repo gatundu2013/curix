@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import { roundToDecimals } from "../../../utils/roundToDecimal";
+import { MultiplierDetails } from "../../../types/shared/game-types";
 
 export class MultiplierGenerator {
   private static readonly CONFIG = {
@@ -9,122 +10,116 @@ export class MultiplierGenerator {
     MIN_MULTIPLIER: 1,
   };
 
-  private serverSeed: string | null = null;
-  private hashedServerSeed: string | null = null;
-  private gameHash: string | null = null;
-  private hashIntValue: number | null = null;
-  private normalizedHashValue: number | null = null;
-  private rawMultiplier: number | null = null;
-  private finalMultiplier: number | null = null;
-  private clientSeed: string | null = null;
+  private multiplierDetails: MultiplierDetails;
 
-  constructor() {}
+  constructor(clientSeed: string) {
+    if (!clientSeed || clientSeed.trim() === "") {
+      throw new Error(
+        `[MultiplierGenerator]: Invalid client seed: ${clientSeed}`
+      );
+    }
+
+    this.multiplierDetails = {
+      finalMultiplier: null,
+      rawMultiplier: null,
+      normalizedHashValue: null,
+      hashIntValue: null,
+      clientSeed: clientSeed,
+      serverSeed: null,
+      serverSeedHash: null,
+      combinedSeed: null,
+      gameHash: null,
+    };
+
+    this.generateMultiplier();
+  }
 
   /**
-   * Generates a secure random server seed (base64) and its SHA-256 hash.
+   * Generates a secure random server seed and its hashed version.
    */
   private generateServerSeed(bytesLength = 24) {
     const serverSeed = crypto.randomBytes(bytesLength).toString("base64");
-    const hashedServerSeed = crypto
+    const serverSeedHash = crypto
       .createHash("sha256")
       .update(serverSeed)
       .digest("hex");
 
-    this.serverSeed = serverSeed;
-    this.hashedServerSeed = hashedServerSeed;
+    this.multiplierDetails.serverSeed = serverSeed;
+    this.multiplierDetails.serverSeedHash = serverSeedHash;
   }
 
   /**
-   * Combines the server and client seeds and hashes them to get a deterministic game hash.
+   * Combines the serverSeed and clientSeed, then hashes them
+   * to produce a deterministic gameHash.
    */
-  private generateHash(clientSeed: string) {
-    if (!clientSeed || clientSeed.trim() === "") {
-      throw new Error("Invalid client seed");
+  private generateHash() {
+    const { serverSeed, clientSeed } = this.multiplierDetails;
+
+    if (!serverSeed) {
+      throw new Error("Cannot generate game hash: server seed is missing.");
     }
 
-    if (!this.serverSeed) {
-      throw new Error("Server seed has not been generated");
-    }
-
-    const combinedSeed = `${this.serverSeed}${this.clientSeed}`;
+    const combinedSeed = `${serverSeed}${clientSeed}`;
     const gameHash = crypto
       .createHash("sha256")
       .update(combinedSeed)
       .digest("hex");
 
-    this.gameHash = gameHash;
-    this.clientSeed = clientSeed;
+    this.multiplierDetails.combinedSeed = combinedSeed;
+    this.multiplierDetails.gameHash = gameHash;
   }
 
   /**
-   * Converts the start of the hash into a decimal, then normalizes it,
-   * and applies an inverse curve to produce a multiplier.
+   * Derives a fair multiplier from the game hash,
+   * applies house edge, and clamps to limits.
    */
+
   private calculateMultiplier() {
-    if (!this.gameHash) {
-      throw new Error("Game hash was not generated");
+    const { gameHash } = this.multiplierDetails;
+    if (!gameHash) {
+      throw new Error("Game hash is missing.");
     }
 
     const sliceLen = MultiplierGenerator.CONFIG.GAME_HASH_SLICE_LEN;
-    const slicedHash = this.gameHash.slice(0, sliceLen);
+    const slicedHash = gameHash.slice(0, sliceLen); // First 13 hex characters
 
-    const byteLength = sliceLen / 2; // 1 bytes === 2 hex char
-    const bitCount = byteLength * 8;
+    const byteLength = sliceLen / 2; // Convert hex chars to byte count
+    const bitCount = byteLength * 8; // Total bits
     const maxHashValue = Math.pow(2, bitCount) - 1;
 
     const hashIntValue = parseInt(slicedHash, 16);
     const normalizedHashValue = hashIntValue / maxHashValue;
 
-    let rawMultiplier = 1 / (1 - normalizedHashValue);
+    let rawMultiplier = 1 / (1 - normalizedHashValue); // calculate Multiplier
     rawMultiplier = roundToDecimals(rawMultiplier);
 
+    // Apply house edge (reduce payout)
     let adjustedMultiplier =
-      rawMultiplier * (1 - MultiplierGenerator.CONFIG.HOUSE_EDGE); // Apply house edge
+      rawMultiplier * (1 - MultiplierGenerator.CONFIG.HOUSE_EDGE);
     adjustedMultiplier = roundToDecimals(adjustedMultiplier);
 
+    // Clamp multiplier within bounds
     const clampedMultiplier = Math.min(
       MultiplierGenerator.CONFIG.MAX_MULTIPLIER,
       Math.max(MultiplierGenerator.CONFIG.MIN_MULTIPLIER, adjustedMultiplier)
     );
 
-    this.hashIntValue = hashIntValue;
-    this.normalizedHashValue = normalizedHashValue;
-    this.rawMultiplier = rawMultiplier;
-    this.finalMultiplier = clampedMultiplier;
+    this.multiplierDetails.hashIntValue = hashIntValue;
+    this.multiplierDetails.normalizedHashValue = normalizedHashValue;
+    this.multiplierDetails.rawMultiplier = rawMultiplier;
+    this.multiplierDetails.finalMultiplier = clampedMultiplier;
   }
 
   /**
-   * Generate Results.
+   * Orchestrates the steps to generate a provably fair multiplier
    */
-  public generateMultiplier(clientSeed: string) {
+  private generateMultiplier() {
     this.generateServerSeed();
-    this.generateHash(clientSeed);
+    this.generateHash();
     this.calculateMultiplier();
-
-    return {
-      finalMultiplier: this.finalMultiplier,
-      rawMultiplier: this.rawMultiplier,
-      normalizedHashValue: this.normalizedHashValue,
-      hashIntValue: this.hashIntValue,
-      clientSeed: this.clientSeed,
-      serverSeed: this.serverSeed,
-      serverSeedHash: this.hashedServerSeed,
-      combinedSeed: `${this.serverSeed}${this.clientSeed}`,
-      gameHash: this.gameHash,
-    };
   }
 
-  public getMultiplierDetails() {
-    return {
-      finalMultiplier: this.finalMultiplier,
-      rawMultiplier: this.rawMultiplier,
-      normalizedHashValue: this.normalizedHashValue,
-      hashIntValue: this.hashIntValue,
-      clientSeed: this.clientSeed,
-      serverSeed: this.serverSeed,
-      serverSeedHash: this.hashedServerSeed,
-      combinedSeed: `${this.serverSeed}${this.clientSeed}`,
-      gameHash: this.gameHash,
-    };
+  public getMultiplierDetails(): MultiplierDetails {
+    return this.multiplierDetails;
   }
 }

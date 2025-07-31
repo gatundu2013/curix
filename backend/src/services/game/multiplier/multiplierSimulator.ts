@@ -55,8 +55,8 @@ export class MultiplierSimulator {
     let highestMultiplier = -Infinity;
 
     for (let i = 1; i <= roundCount; i++) {
-      const generator = new MultiplierGenerator();
-      const { finalMultiplier } = generator.generateMultiplier("curix2013");
+      const multiplierGenerator = new MultiplierGenerator(`curix2013${i}`);
+      const { finalMultiplier } = multiplierGenerator.getMultiplierDetails();
       const multiplier = finalMultiplier!;
 
       multipliers.push(multiplier);
