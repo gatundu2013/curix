@@ -1,3 +1,9 @@
 import { roundStateManager } from "./services/game/round-statemanager";
 
-console.log(roundStateManager.generateRoundResults());
+roundStateManager.generateRoundResults();
+
+async function f() {
+  await roundStateManager.incrementMultipliers();
+  console.log("fully awaited");
+}
+f();

@@ -3,7 +3,6 @@ import {
   VehicleStatus,
   VehicleType,
 } from "../../types/shared/game-types";
-import { roundToDecimals } from "../../utils/roundToDecimal";
 import { MultiplierGenerator } from "./multiplier/multiplierGenerator";
 
 interface VehicleConstructorParams {
@@ -34,7 +33,7 @@ export class Vehicle {
 
   public incrementMultiplier() {
     const growth = this.currentMultiplier * Vehicle.MULTIPLIER_GROWTH_RATE;
-    const newMultiplier = roundToDecimals(this.currentMultiplier + growth);
+    const newMultiplier = this.currentMultiplier + growth;
 
     // Final multiplier has been attained - end
     if (newMultiplier >= this.finalMultiplier) {
@@ -44,5 +43,18 @@ export class Vehicle {
     }
 
     this.currentMultiplier = newMultiplier;
+    this.status = VehicleStatus.RUNNING;
+  }
+
+  public setStatus(status: VehicleStatus) {
+    this.status = status;
+  }
+
+  public getStatus() {
+    return this.status;
+  }
+
+  public getCurrentMultiplier() {
+    return this.currentMultiplier;
   }
 }
