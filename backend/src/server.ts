@@ -1,4 +1,4 @@
-import { roundStateManager } from "./services/game/round-statemanager";
+import { roundStateManager } from "./services/game/round-state-manager";
 
 roundStateManager.generateRoundResults();
 

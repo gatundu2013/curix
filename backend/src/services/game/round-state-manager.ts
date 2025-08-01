@@ -19,7 +19,7 @@ export const VEHICLE_TYPES = {
 export class RoundStateManager {
   private static instance: RoundStateManager;
 
-  private roundState: RoundPhase;
+  private roundPhase: RoundPhase;
   private readonly vehicleMultipliers: Record<VehicleType, Vehicle | null>;
   private readonly vehicleClientSeeds: Record<
     VehicleType,
@@ -29,7 +29,7 @@ export class RoundStateManager {
   private multiplierLoopTimeout: NodeJS.Timeout | null = null;
 
   private constructor() {
-    this.roundState = RoundPhase.PREPARING;
+    this.roundPhase = RoundPhase.PREPARING;
 
     this.vehicleClientSeeds = {
       [VEHICLE_TYPES.BODABODA]: null,
@@ -142,6 +142,10 @@ export class RoundStateManager {
 
       loop();
     });
+  }
+
+  public setRoundPhase(roundPhase: RoundPhase) {
+    this.roundPhase = roundPhase;
   }
 }
 

@@ -1,4 +1,4 @@
-import { VEHICLE_TYPES } from "../../services/game/round-statemanager";
+import { VEHICLE_TYPES } from "../../services/game/round-state-manager";
 
 export enum RoundPhase {
   PREPARING = "preparing",
