@@ -31,6 +31,7 @@ export class RoundStateManager {
   private constructor() {
     this.roundPhase = RoundPhase.PREPARING;
 
+    // Initialize all vehicle-related data structures
     this.vehicleClientSeeds = {
       [VEHICLE_TYPES.BODABODA]: null,
       [VEHICLE_TYPES.MATATU]: null,
@@ -61,17 +62,21 @@ export class RoundStateManager {
     const vehicleTypes = Object.keys(this.vehicleMultipliers) as VehicleType[];
 
     for (const vehicleType of vehicleTypes) {
+      // Use provided client seed if available, otherwise use default
       const defaultClientSeed = `curix2013-${vehicleType}`;
-      const objEntry = this.vehicleClientSeeds[vehicleType];
-      const clientSeed = objEntry?.clientSeed ?? defaultClientSeed;
+      const providedClientSeed =
+        this.vehicleClientSeeds[vehicleType]?.clientSeed;
+      const clientSeed = providedClientSeed || defaultClientSeed;
 
+      // Create multiplier generator and vehicle instance
       const multiplierGenerator = new MultiplierGenerator(clientSeed);
-      const vehicleDetails = new Vehicle({
+      const newVehicle = new Vehicle({
         multiplierGenerator,
         vehicleType,
       });
 
-      this.vehicleMultipliers[vehicleType] = vehicleDetails;
+      // Store the vehicle for this round
+      this.vehicleMultipliers[vehicleType] = newVehicle;
     }
   }
 
@@ -81,74 +86,90 @@ export class RoundStateManager {
    */
   public async incrementMultipliers(): Promise<void> {
     return new Promise((resolve) => {
-      const loop = () => {
+      const gameLoop = () => {
+        // Get all vehicle entries for processing
         const vehicleEntries = Object.entries(this.vehicleMultipliers) as [
           VehicleType,
           Vehicle
         ][];
 
-        const emitRes: Record<
+        // Prepare result object to emit updates
+        const emitResults: Record<
           VehicleType,
           { currentMultiplier: number; status: VehicleStatus }
-        > = {} as any;
+        > = {} as Record<
+          VehicleType,
+          { currentMultiplier: number; status: VehicleStatus }
+        >;
 
+        // Process each vehicle in this game tick
         for (const [vehicleType, vehicle] of vehicleEntries) {
-          if (!vehicle) continue;
+          if (!vehicle) {
+            continue; // Skip if vehicle doesn't exist
+          }
 
-          const status = vehicle.getStatus();
+          const currentStatus = vehicle.getStatus();
+          const hasAlreadyCrashed = currentStatus === VehicleStatus.CRASHED;
+          const crashHasBeenHandled = this.hasCrashedBeenHandled[vehicleType];
 
-          // Increment multiplier only if vehicle has not crashed
-          const shouldIncrement =
-            status !== VehicleStatus.CRASHED ||
-            this.hasCrashedBeenHandled[vehicleType];
-
-          if (shouldIncrement) {
+          // Only increment if vehicle is still running OR crash happened but hasn't been handled yet
+          if (!hasAlreadyCrashed || !crashHasBeenHandled) {
             vehicle.incrementMultiplier();
 
-            // If this call crashed the vehicle, mark it
-            if (vehicle.getStatus() === VehicleStatus.CRASHED) {
+            // Check if vehicle just crashed on this increment
+            const statusAfterIncrement = vehicle.getStatus();
+            const justCrashed = statusAfterIncrement === VehicleStatus.CRASHED;
+
+            if (justCrashed) {
               this.hasCrashedBeenHandled[vehicleType] = true;
             }
           }
 
-          // Update emitted state
-          emitRes[vehicleType] = {
+          // Collect current state for emission
+          emitResults[vehicleType] = {
             currentMultiplier: vehicle.getCurrentMultiplier(),
             status: vehicle.getStatus(),
           };
         }
 
-        // Checks if all Vehicles/multipliers have crashed
-        const anyRunning = vehicleEntries.some(
-          ([, vehicle]) => vehicle?.getStatus() === VehicleStatus.RUNNING
-        );
+        // Check if any vehicles are still running (game should continue)
+        const hasRunningVehicles = vehicleEntries.some(([, vehicle]) => {
+          return vehicle?.getStatus() === VehicleStatus.RUNNING;
+        });
 
-        // TODO: Replace with real emit
+        // TODO: Replace with real emit to clients
         console.log(
           "Emit vehicle update:",
-          emitRes.bodaboda.currentMultiplier.toFixed(4),
-          emitRes.matatu.currentMultiplier.toFixed(4)
+          emitResults.bodaboda.currentMultiplier.toFixed(4),
+          emitResults.matatu.currentMultiplier.toFixed(4)
         );
 
-        // A vehicle is still running - loop continues
-        if (anyRunning) {
-          this.multiplierLoopTimeout = setTimeout(loop, 100);
-          return;
+        if (hasRunningVehicles) {
+          // Continue the game loop - schedule next tick
+          this.multiplierLoopTimeout = setTimeout(gameLoop, 100);
+        } else {
+          // All vehicles have crashed - end the round
+          this.cleanupGameLoop();
+          resolve();
         }
-
-        // Round ends - All vehicles have crashed
-        if (this.multiplierLoopTimeout) {
-          clearTimeout(this.multiplierLoopTimeout);
-          this.multiplierLoopTimeout = null;
-        }
-        resolve();
       };
 
-      loop();
+      // Start the game loop
+      gameLoop();
     });
   }
 
-  public setRoundPhase(roundPhase: RoundPhase) {
+  /**
+   * Helper method to cleanup the game loop timeout
+   */
+  private cleanupGameLoop(): void {
+    if (this.multiplierLoopTimeout) {
+      clearTimeout(this.multiplierLoopTimeout);
+      this.multiplierLoopTimeout = null;
+    }
+  }
+
+  public setRoundPhase(roundPhase: RoundPhase): void {
     this.roundPhase = roundPhase;
   }
 }
