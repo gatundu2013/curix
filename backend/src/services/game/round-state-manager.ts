@@ -124,7 +124,11 @@ export class RoundStateManager {
         );
 
         // TODO: Replace with real emit
-        console.log("Emit vehicle update:", emitRes);
+        console.log(
+          "Emit vehicle update:",
+          emitRes.bodaboda.currentMultiplier.toFixed(4),
+          emitRes.matatu.currentMultiplier.toFixed(4)
+        );
 
         // A vehicle is still running - loop continues
         if (anyRunning) {

@@ -1,9 +1,4 @@
+import { roundLifeCycleManager } from "./services/game/round-lifecycle-manager";
 import { roundStateManager } from "./services/game/round-state-manager";
 
-roundStateManager.generateRoundResults();
-
-async function f() {
-  await roundStateManager.incrementMultipliers();
-  console.log("fully awaited");
-}
-f();
+roundLifeCycleManager.startLifecycle();
