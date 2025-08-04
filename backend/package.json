@@ -4,16 +4,28 @@
   "description": "Best Crash App",
   "main": "server.js",
   "scripts": {
-    "dev": "tsx --watch src/server.ts",
-    "start": "node dist/server.js",
+    "dev": "NODE_ENV=development tsx --watch src/server.ts",
+    "start": "NODE_ENV=production node dist/server.js",
     "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "dependencies": {
+    "dotenv": "^17.2.1",
+    "drizzle-orm": "^0.44.4",
+    "express": "^5.1.0",
+    "ioredis": "^5.7.0",
+    "pg": "^8.16.3",
+    "socket.io": "^4.8.1",
+    "zod": "^4.0.14"
+  },
   "devDependencies": {
+    "@types/express": "^5.0.3",
     "@types/node": "^24.1.0",
+    "@types/pg": "^8.15.5",
+    "drizzle-kit": "^0.31.4",
     "tsx": "^4.20.3"
   }
 }
