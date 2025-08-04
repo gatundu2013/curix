@@ -4,8 +4,8 @@ import { envSchema, EnvType } from "../validations/env-validations";
 import { ICONS } from "../utils/icons-utils";
 import dotenv from "dotenv";
 
-export const envFile = `.env.${process.env.NODE_ENV || "development"}`;
-export const envFilePath = path.resolve(process.cwd(), envFile);
+const envFile = `.env.${process.env.NODE_ENV || "development"}`;
+const envFilePath = path.resolve(process.cwd(), envFile);
 
 if (!existsSync(envFilePath)) {
   console.error(`${ICONS.error} Environment file not found at: ${envFilePath}`);
