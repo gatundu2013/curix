@@ -4,9 +4,15 @@ import {
   phoneNumberRegex,
   usernameRegex,
 } from "../constants/constants";
-import { OTP_PURPOSE } from "../types/shared/auth-types";
+import {
+  LoginPayload,
+  OTP_PURPOSE,
+  RegisterPayload,
+  RequestOtpPayload,
+  ResetPasswordPayload,
+} from "../types/shared/auth-types";
 
-export const registerSchema = z.object({
+export const registerSchema: z.ZodType<RegisterPayload> = z.object({
   username: z
     .string()
     .min(3, "Username must be at least 3 characters long")
@@ -16,6 +22,7 @@ export const registerSchema = z.object({
       "Username can only contain letters, numbers, and single underscores. Cannot start or end with underscore, and cannot have consecutive underscores"
     )
     .trim(),
+
   phoneNumber: z
     .string()
     .regex(
@@ -36,7 +43,7 @@ export const registerSchema = z.object({
   ),
 });
 
-export const loginSchema = z.object({
+export const loginSchema: z.ZodType<LoginPayload> = z.object({
   phoneNumber: z
     .string()
     .regex(
@@ -46,7 +53,7 @@ export const loginSchema = z.object({
   password: z.string(),
 });
 
-export const resetPasswordSchema = z.object({
+export const resetPasswordSchema: z.ZodType<ResetPasswordPayload> = z.object({
   phoneNumber: z
     .string()
     .regex(
@@ -64,7 +71,7 @@ export const resetPasswordSchema = z.object({
     .regex(otpRegex, "OTP code must contain only numbers"),
 });
 
-export const requestOtpSchema = z.object({
+export const requestOtpSchema: z.ZodType<RequestOtpPayload> = z.object({
   phoneNumber: z
     .string()
     .regex(
