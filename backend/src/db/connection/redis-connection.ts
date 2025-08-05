@@ -2,7 +2,7 @@ import { Redis } from "ioredis";
 import { envVariables } from "../../config/env-config";
 import { ICONS } from "../../utils/icons-utils";
 
-const redis = new Redis(envVariables.REDIS_URL, {
+export const redis = new Redis(envVariables.REDIS_URL, {
   lazyConnect: true,
   retryStrategy(times) {
     if (times > 5) {

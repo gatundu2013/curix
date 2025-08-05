@@ -66,7 +66,6 @@ export const resetPasswordSchema: z.ZodType<ResetPasswordPayload> = z.object({
     .max(128, "Password cannot exceed 128 characters"),
   otp: z
     .string()
-    .min(1, "OTP code is required")
     .length(4, "OTP code must be exactly 4 digits")
     .regex(otpRegex, "OTP code must contain only numbers"),
 });
